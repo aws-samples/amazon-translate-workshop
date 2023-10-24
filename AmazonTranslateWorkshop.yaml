@@ -1,0 +1,209 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+Description: Creates resources necessary for Amazon Translate Workshop
+
+Resources:
+  Cloud9IDE:
+    Type: AWS::Cloud9::EnvironmentEC2
+    Properties:
+      Description: "Cloud9 IDE"
+      InstanceType: "t2.large"
+      ImageId: amazonlinux-2-x86_64
+      AutomaticStopTimeMinutes: 1440
+      Name: AmazonTranslateWorkshopInstance
+
+  BatchTranslateInputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: LogDeliveryWrite
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+      VersioningConfiguration:
+        Status: Suspended
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  BatchTranslateInputBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BatchTranslateInputBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - "s3:*"
+            Effect: "Deny"
+            Principal: "*"
+            Resource:
+              - !GetAtt BatchTranslateInputBucket.Arn
+              - !Sub "${BatchTranslateInputBucket.Arn}/*"
+            Condition:
+              Bool:
+                "aws:SecureTransport": false
+
+  BatchTranslateOutputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: LogDeliveryWrite
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+      VersioningConfiguration:
+        Status: Suspended
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  BatchTranslateOutputBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref BatchTranslateOutputBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - "s3:*"
+            Effect: "Deny"
+            Principal: "*"
+            Resource:
+              - !GetAtt BatchTranslateOutputBucket.Arn
+              - !Sub "${BatchTranslateOutputBucket.Arn}/*"
+            Condition:
+              Bool:
+                "aws:SecureTransport": false
+
+  ACTInputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: LogDeliveryWrite
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+      VersioningConfiguration:
+        Status: Suspended
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  ACTInputBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ACTInputBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - "s3:*"
+            Effect: "Deny"
+            Principal: "*"
+            Resource:
+              - !GetAtt ACTInputBucket.Arn
+              - !Sub "${ACTInputBucket.Arn}/*"
+            Condition:
+              Bool:
+                "aws:SecureTransport": false
+
+  ACTOutputBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      AccessControl: LogDeliveryWrite
+      OwnershipControls:
+        Rules:
+          - ObjectOwnership: ObjectWriter
+      VersioningConfiguration:
+        Status: Suspended
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: True
+        BlockPublicPolicy: True
+        IgnorePublicAcls: True
+        RestrictPublicBuckets: True
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+
+  ACTOutputBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref ACTOutputBucket
+      PolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action:
+              - "s3:*"
+            Effect: "Deny"
+            Principal: "*"
+            Resource:
+              - !GetAtt ACTOutputBucket.Arn
+              - !Sub "${ACTOutputBucket.Arn}/*"
+            Condition:
+              Bool:
+                "aws:SecureTransport": false
+
+
+  TranslateServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Action: sts:AssumeRole
+            Effect: Allow
+            Principal:
+              Service: translate.amazonaws.com
+      Policies:
+        - PolicyName: translate-service
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  - !Sub "arn:aws:s3:::${BatchTranslateInputBucket}"
+                  - !Sub "arn:aws:s3:::${BatchTranslateInputBucket}/*"
+                  - !Sub "arn:aws:s3:::${BatchTranslateOutputBucket}"
+                  - !Sub "arn:aws:s3:::${BatchTranslateOutputBucket}/*"
+                  - !Sub "arn:aws:s3:::${ACTInputBucket}"
+                  - !Sub "arn:aws:s3:::${ACTInputBucket}/*"
+                  - !Sub "arn:aws:s3:::${ACTOutputBucket}"
+                  - !Sub "arn:aws:s3:::${ACTOutputBucket}/*"
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketAcl
+                  - s3:GetBucketLocation
+                  - s3:PutObject
+                  - s3:ListBucket
+
+
+Outputs:
+  BatchTranslateInputBucket:
+    Value: !Ref BatchTranslateInputBucket
+  BatchTranslateOutputBucket:
+    Value: !Ref BatchTranslateOutputBucket
+  ACTInputBucket:
+    Value: !Ref ACTInputBucket
+  ACTOutputBucket:
+    Value: !Ref ACTOutputBucket
+  Cloud9Instance:
+    Value: !GetAtt Cloud9IDE.Name
