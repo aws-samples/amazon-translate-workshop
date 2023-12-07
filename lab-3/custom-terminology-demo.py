@@ -23,6 +23,7 @@ response = translate.get_terminology(
     Name='custom-terminology-demo',
     TerminologyDataFormat='CSV'
 )
+
 print("Name:{}".format(response["TerminologyProperties"]["Name"]))
 print("Description:{}".format(response["TerminologyProperties"]["Description"]))
 print("ARN:{}".format(response["TerminologyProperties"]["Arn"]))
